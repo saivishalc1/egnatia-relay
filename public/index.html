@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Egnatia Relay</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div id="root"></div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+<div class="toast" id="toast"></div>
+<script>
+/* ---------- helpers ---------- */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const money = (n) => !n ? '—' : n >= 1e6 ? '$' + (n / 1e6).toFixed(2).replace(/0$/, '') + 'M' : '$' + Math.round(n / 1000) + 'K';
+const initials = (n) => (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+const scoreColor = (s) => s >= 75 ? 'var(--good)' : s >= 50 ? 'var(--warn)' : 'var(--crit)';
+const scoreEl = (s) => `<span class="score" style="--v:${s || 0};--sc:${scoreColor(s || 0)}"><span>${s ?? '–'}</span></span>`;
+const healthTag = (h) => ({ good: '<span class="tag good">On cadence</span>', warn: '<span class="tag warn">Slipping</span>', crit: '<span class="tag crit">Cold</span>' })[h] || '';
+const STAGES = { requested: 'Walkthrough requested', walked: 'Walked', estimate_sent: 'Estimate sent', negotiating: 'Negotiating', won: 'Won', lost: 'Lost' };
+const STAGE_ORDER = ['requested', 'walked', 'estimate_sent', 'negotiating', 'won'];
+const ago = (iso) => { if (!iso) return '—'; const d = (Date.now() - new Date(iso)) / 864e5; return d < 1 ? 'today' : Math.floor(d) + 'd ago'; };
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+async function api(path, opts = {}) {
+  const r = await fetch('/api' + path, { headers: { 'content-type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  if (r.status === 401) { renderLogin(); throw new Error('auth'); }
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || r.statusText); }
+  return r.json();
+}
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600); }
+function openDrawer(html) { const d = $('#drawer'); d.innerHTML = `<button class="btn ghost sm close" onclick="closeDrawer()" aria-label="Close">✕</button>` + html; d.classList.add('open'); $('#scrim').classList.add('show'); }
+function closeDrawer() { $('#drawer').classList.remove('open'); $('#scrim').classList.remove('show'); }
+$('#scrim').onclick = closeDrawer; document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+const state = { view: location.hash.slice(1) || 'funnel', status: null };
+
+/* ---------- shell ---------- */
+function shell(inner) {
+  const nav = [['funnel', 'Agents → Opportunities'], ['today', 'Today'], ['followups', 'Follow-ups'], ['agents', 'Agents'], ['pipeline', 'Pipeline'], ['memo', 'Walkthrough memo'], ['inbox', 'Inbox agent'], ['settings', 'Settings']];
+  $('#root').innerHTML = `<div class="app"><aside class="rail"><div class="brand"><div class="name">Egnatia Relay</div><div class="sub">Relationships · Follow-up · Pipeline</div>${state.status ? `<span class="mode">AI: ${state.status.ai}${state.status.gmail.connected ? ' · Gmail ✓' : ''}</span>` : ''}</div>
+  ${nav.map(([v, l]) => `<button class="nav ${state.view === v ? 'active' : ''}" onclick="go('${v}')">${l}${v === 'followups' && state.fuCount ? `<span class="count">${state.fuCount}</span>` : ''}</button>`).join('')}
+  <div class="foot"><b>Egnatia Construction</b><br>Brooklyn &amp; Manhattan<br>Built by Keres AI</div></aside><main class="main" id="main">${inner}</main></div>`;
+}
+function header(kicker, title, desc, extra = '') { return `<div class="topbar"><div><div class="kicker">${kicker}</div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div><div style="display:flex;gap:8px;align-items:center">${extra}</div></div>`; }
+function go(v) { state.view = v; location.hash = v; render(); window.scrollTo({ top: 0 }); }
+window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (v && v !== state.view) { state.view = v; render(); } });
+
+async function render() {
+  shell('<div class="s" style="padding:40px">Loading…</div>');
+  try { state.status = await api('/status'); const fu = await api('/followups'); state.fuCount = fu.filter(f => f.status === 'open').length; shell(await views[state.view]()); }
+  catch (e) { if (e.message !== 'auth') shell(`<div class="note">Error: ${esc(e.message)}</div>`); }
+}
+function renderLogin() {
+  $('#root').innerHTML = `<div class="login"><form onsubmit="return login(event)"><div class="name" style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:700">Egnatia Relay</div><input type="password" id="pw" placeholder="Password" autofocus><button class="btn accent">Sign in</button></form></div>`;
+}
+async function login(e) { e.preventDefault(); const r = await fetch('/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) }); if (r.ok) render(); else toast('Wrong password'); return false; }
+
+const views = {};
+
+/* ---------- Agents → Opportunities ---------- */
+views.funnel = async () => {
+  const d = await api('/dashboard'); const f = d.funnel;
+  const fu = await api('/followups');
+  const nextFor = (id) => { const x = fu.find(q => q.agent_id === id && q.status === 'open'); return x ? { t: `${x.rule.replace('_', ' ')} · ${x.severity === 'crit' ? 'overdue' : 'due now'}`, s: x.severity } : { t: 'On cadence', s: 'good' }; };
+  const chain = [['Agent referrals', f.referrals], ['Walkthroughs', f.walked], ['Memos sent', f.memos], ['Estimates sent', f.estimates], ['Projects won', f.won]];
+  return header('Agent relationships → qualified opportunities', 'One system for the way Egnatia wins work.', 'Agents bring buyers. Walkthroughs turn buyers into opportunities. This screen shows the chain per agent and what the system does next.', `<button class="btn sm" onclick="runRules()">Run the rules now</button>`) +
+  `<div class="stats">
+    <div class="stat"><div class="lbl">Active agent relationships</div><div class="val">${d.agents.length}</div><div class="sub">${d.agents.filter(a => a.tier === 'Core').length} core · ${d.agents.filter(a => a.tier === 'Growth').length} growth · ${d.agents.filter(a => a.tier === 'New').length} new</div></div>
+    <div class="stat"><div class="lbl">Walkthroughs</div><div class="val">${f.walked}</div><div class="sub">${f.memos} with a written memo</div></div>
+    <div class="stat"><div class="lbl">Qualified opportunities</div><div class="val">${d.snapshot.qualified}</div><div class="sub">$150K+ and scored 50+ · ${d.snapshot.pipeline} active</div></div>
+    <div class="stat"><div class="lbl">Referral → project</div><div class="val">${f.referrals ? '1 in ' + Math.round(f.referrals / Math.max(1, f.won)) : '—'}</div><div class="sub good">Pilot goal: 1 in 5</div></div>
+  </div>
+  <div class="grid g21">
+    <div class="panel"><div class="hd"><h2>By agent</h2><span class="meta">Referrals → walked → won</span></div><div class="tw"><table><thead><tr><th>Agent</th><th class="num">Refs</th><th class="num">Walked</th><th class="num">Won</th><th class="num">Pipeline</th><th>Last touch</th><th>What happens next</th></tr></thead><tbody>
+      ${f.by_agent.map(a => { const n = nextFor(a.id); return `<tr class="click" onclick="showAgent('${a.id}')"><td><div style="font-weight:500">${esc(a.name)}</div><div class="s">${esc(a.firm || '')} · ${a.tier}</div></td><td class="num">${a.referrals}</td><td class="num">${a.walked}</td><td class="num">${a.won}</td><td class="mono">${money(a.pipeline)}</td><td class="mono">${a.days_since_touch}d</td><td><span class="dot ${n.s}" style="margin-right:6px"></span><span class="s">${n.t}</span></td></tr>`; }).join('')}
+    </tbody></table></div></div>
+    <div>
+      <div class="panel"><div class="hd"><h2>The chain</h2></div><div class="bd"><div class="bars">${chain.map((c, i) => `<div class="bar" style="grid-template-columns:1fr 90px 36px"><span>${c[0]}</span><div class="tr"><div class="fl ${i < 2 ? 'navy' : ''}" style="width:${chain[0][1] ? c[1] / chain[0][1] * 100 : 0}%"></div></div><span class="v mono">${c[1]}</span></div>`).join('')}</div></div></div>
+      <div class="panel" style="margin-top:16px"><div class="hd"><h2>What the system does with a relationship</h2></div><div class="bd"><ul class="reasons">
+        <li><span><b style="font-weight:500">Keeps it warm</b> — cadence by tier; drafts the touch when the clock runs out.</span></li>
+        <li><span><b style="font-weight:500">Makes the agent look good</b> — walkthrough memo to agent and buyer within 24 hours.</span></li>
+        <li><span><b style="font-weight:500">Qualifies the opportunity</b> — scores for $150K–$500K+ fit with plain reasons.</span></li>
+        <li><span><b style="font-weight:500">Closes the loop</b> — when a project is won, asks the agent for the next introduction.</span></li></ul></div></div>
+    </div></div>`;
+};
+async function runRules() { toast('Running rules…'); const r = await api('/followups/run', { method: 'POST' }); toast(`${r.checked} checks · ${r.created} new follow-ups`); render(); }
+
+/* ---------- Today ---------- */
+views.today = async () => {
+  const d = await api('/dashboard');
+  const open = d.followups;
+  return header(new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }), 'Good morning.', esc(d.brief)) +
+  `<div class="stats">
+    <div class="stat"><div class="lbl">Follow-ups waiting</div><div class="val">${d.snapshot.followups}</div><div class="sub ${d.snapshot.overdue ? 'crit' : ''}">${d.snapshot.overdue} overdue</div></div>
+    <div class="stat"><div class="lbl">Active pipeline</div><div class="val">${d.snapshot.pipeline}</div><div class="sub">${d.snapshot.opps} opportunities · ${d.snapshot.weighted} weighted</div></div>
+    <div class="stat"><div class="lbl">Agents on cadence</div><div class="val">${d.agents.filter(a => a.health === 'good').length}<span style="font-size:16px;color:var(--ink3)"> / ${d.agents.length}</span></div><div class="sub ${d.snapshot.cold ? 'crit' : ''}">${d.snapshot.cold} gone cold</div></div>
+    <div class="stat"><div class="lbl">Hours saved · 7 days</div><div class="val">${d.hours_saved}</div><div class="sub good">Drafts sent, mail filed, memos written</div></div>
+  </div>
+  <div class="grid g21">
+    <div class="panel"><div class="hd"><h2>Where to spend attention</h2><span class="meta">Likelihood × value</span></div><div class="bd">${d.priority.map(o => `<div class="row click" onclick="showOpp('${o.id}')">${scoreEl(o.score)}<div class="grow"><div class="t">${esc(o.address)}</div><div class="s">${esc(o.scope || '')} · via ${esc(o.agent?.name || '—')}</div></div><div style="text-align:right"><div class="mono">${money(o.est_value)}</div><div class="s">${STAGES[o.stage]}</div></div></div>`).join('') || '<div class="s">No active opportunities.</div>'}</div></div>
+    <div class="panel"><div class="hd"><h2>Needs you today</h2><span class="meta">${open.length} items</span></div><div class="bd">${open.slice(0, 6).map(f => `<div class="row click" onclick="go('followups')"><span class="dot ${f.severity}"></span><div class="grow"><div class="t">${esc(f.agent?.name || f.contact?.name || f.to_email || '')}</div><div class="s">${f.rule.replace('_', ' ')}${f.opportunity ? ' · ' + esc(f.opportunity.address) : ''}</div></div></div>`).join('') || '<div class="s">Nothing waiting.</div>'}<div style="margin-top:12px"><button class="btn sm" onclick="go('followups')">Review all drafts →</button></div></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="panel"><div class="hd"><h2>Agent relationships</h2><span class="meta">Open pipeline</span></div><div class="bd"><div class="bars">${d.agents.slice(0, 6).map(a => `<div class="bar"><span>${esc(a.name)}</span><div class="tr"><div class="fl ${a.health === 'good' ? 'navy' : ''}" style="width:${Math.max(3, a.pipeline / Math.max(1, d.agents[0].pipeline) * 100)}%"></div></div><span class="v mono">${money(a.pipeline)}</span></div>`).join('')}</div></div></div>
+    <div class="panel"><div class="hd"><h2>Handled without you</h2><span class="meta">Recent inbox</span></div><div class="bd">${d.inbox.filter(i => i.status !== 'new').slice(0, 5).map(m => `<div class="row"><div class="avatar navy" style="font-size:11px">${initials(m.from_name)}</div><div class="grow"><div class="t">${esc(m.subject)}</div><div class="s">${esc(m.actions[0] || '')}</div></div><span class="s mono">${fmtDate(m.received_at)}</span></div>`).join('') || '<div class="s">Nothing processed yet. Open Inbox agent → Process.</div>'}</div></div>
+  </div>`;
+};
+
+/* ---------- Follow-ups ---------- */
+views.followups = async () => {
+  const list = await api('/followups');
+  return header('Follow-up queue', 'Nothing falls through the cracks.', 'Each item exists because a rule fired. The draft is in your voice; you approve, edit, or snooze. Nothing sends without you.', `<button class="btn sm" onclick="runRules()">Run the rules now</button>`) +
+  `<div class="panel">${list.length ? list.map(f => `<div class="fu ${f.status === 'snoozed' ? 'done' : ''}" id="fu-${f.id}">
+    <div class="top"><span class="dot ${f.severity}"></span><b>${f.rule.replace('_', ' ')}</b><span class="tag neutral">${f.status === 'snoozed' ? 'Snoozed' : f.severity === 'crit' ? 'Overdue' : 'Due now'}</span><span style="margin-left:auto" class="s">${esc(f.agent?.name || f.contact?.name || '')}${f.agent?.firm ? ' · ' + esc(f.agent.firm) : ''}${f.opportunity ? ' · ' + esc(f.opportunity.address) : ''}</span></div>
+    <div class="why"><b style="font-weight:500;color:var(--ink)">Why now:</b> ${esc(f.why)}</div>
+    <div class="draft"><div class="from">Draft ${f.channel} · to ${esc(f.to_email || '(no address on file)')}${f.subject ? ' · ' + esc(f.subject) : ''}</div>${f.draft == null ? '<span class="spin"></span> drafting…' : `<textarea id="d-${f.id}">${esc(f.draft)}</textarea>`}</div>
+    <div class="acts"><button class="btn primary sm" onclick="approve('${f.id}')">Approve &amp; ${state.status.gmail.connected && f.channel === 'email' ? 'send' : 'log as sent'}</button><button class="btn sm" onclick="redraft('${f.id}')">Redraft</button><button class="btn ghost sm" onclick="snooze('${f.id}')">Snooze 3d</button><button class="btn ghost sm" onclick="dismiss('${f.id}')">Dismiss</button></div>
+  </div>`).join('') : '<div class="bd s">Queue is empty. Run the rules to check every agent, estimate and walkthrough.</div>'}</div>`;
+};
+async function approve(id) { const draft = $(`#d-${id}`)?.value; const r = await api(`/followups/${id}/approve`, { method: 'POST', body: { draft } }); toast(r.sent_via === 'gmail' ? 'Sent via Gmail and logged.' : 'Logged as sent (connect Gmail in Settings to send for real).'); render(); }
+async function redraft(id) { const instruction = prompt('Any instruction for the redraft? (optional)') || ''; toast('Redrafting…'); await api(`/followups/${id}/redraft`, { method: 'POST', body: { instruction } }); render(); }
+async function snooze(id) { await api(`/followups/${id}/snooze`, { method: 'POST', body: { days: 3 } }); toast('Snoozed 3 days'); render(); }
+async function dismiss(id) { await api(`/followups/${id}/dismiss`, { method: 'POST' }); render(); }
+
+/* ---------- Agents ---------- */
+views.agents = async () => {
+  const rows = await api('/agents');
+  return header('Agent relationships', 'Your referral network, in one place.', 'Every agent has a cadence rule by tier. The system watches the clock.', `<button class="btn sm" onclick="newAgent()">+ Add agent</button>`) +
+  `<div class="panel"><div class="tw"><table><thead><tr><th>Agent</th><th>Coverage</th><th>Tier · cadence</th><th>Last touch</th><th class="num">Referrals</th><th class="num">Won</th><th>Status</th></tr></thead><tbody>
+  ${rows.map(a => `<tr class="click" onclick="showAgent('${a.id}')"><td><div style="display:flex;align-items:center;gap:10px"><div class="avatar">${initials(a.name)}</div><div><div style="font-weight:500">${esc(a.name)}</div><div class="s">${esc(a.firm || '')}</div></div></div></td><td>${esc(a.area || '')}</td><td>${a.tier} <span class="s">· every ${a.cadence_days} days</span></td><td class="mono">${a.days_since_touch}d ago</td><td class="num">${a.referrals}</td><td class="num">${a.won}</td><td>${healthTag(a.health)}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
+};
+async function showAgent(id) {
+  const a = await api(`/agents/${id}`);
+  openDrawer(`<div style="display:flex;gap:12px;align-items:center"><div class="avatar" style="width:44px;height:44px;font-size:15px">${initials(a.name)}</div><div><h2>${esc(a.name)}</h2><div class="s">${esc(a.firm || '')} · ${esc(a.area || '')}</div></div></div>
+  <dl class="kv"><dt>Tier</dt><dd><select onchange="patchAgent('${a.id}',{tier:this.value})">${['Core', 'Growth', 'New', 'Dormant'].map(t => `<option ${a.tier === t ? 'selected' : ''}>${t}</option>`).join('')}</select></dd><dt>Channel</dt><dd><select onchange="patchAgent('${a.id}',{channel:this.value})"><option ${a.channel === 'email' ? 'selected' : ''} value="email">email</option><option ${a.channel === 'text' ? 'selected' : ''} value="text">text</option></select></dd><dt>Email</dt><dd class="mono">${esc(a.email || '—')}</dd><dt>Phone</dt><dd class="mono">${esc(a.phone || '—')}</dd><dt>Last touch</dt><dd class="mono">${ago(a.last_touch_at)}</dd><dt>Referrals → won</dt><dd>${a.referrals} → ${a.won}</dd></dl>
+  <label class="f">Notes</label><textarea onblur="patchAgent('${a.id}',{notes:this.value},true)">${esc(a.notes || '')}</textarea>
+  ${a.followups.length ? `<div class="section-label">Queued for you</div>${a.followups.map(f => `<div class="draft" style="margin-bottom:8px"><div class="from">${f.rule.replace('_', ' ')}</div>${esc(f.draft || 'drafting…')}</div>`).join('')}` : ''}
+  <div class="section-label">Opportunities</div>${a.opportunities.map(o => `<div class="row click" onclick="showOpp('${o.id}')">${scoreEl(o.score)}<div class="grow"><div class="t">${esc(o.address)}</div><div class="s">${STAGES[o.stage]} · ${esc(o.scope || '')}</div></div><span class="mono">${money(o.est_value)}</span></div>`).join('') || '<div class="s">None yet.</div>'}
+  <div class="section-label">History</div><ul class="tl">${a.activities.map(h => `<li><span class="when">${fmtDate(h.occurred_at)}</span><div><b style="font-weight:500">${h.kind}</b> <span class="who">· ${esc(h.summary)}</span></div></li>`).join('') || '<li><span class="when"></span><span class="s">No history yet.</span></li>'}</ul>
+  <div style="display:flex;gap:8px;margin-top:18px"><button class="btn primary sm" onclick="logTouch('${a.id}')">Log a touch</button></div>`);
+}
+async function patchAgent(id, body, quiet) { await api(`/agents/${id}`, { method: 'PATCH', body }); if (!quiet) toast('Saved'); }
+async function logTouch(id) { const summary = prompt('What happened? (call, coffee, text…)'); if (!summary) return; await api(`/agents/${id}/touch`, { method: 'POST', body: { kind: 'note', summary } }); toast('Logged; cadence clock reset'); showAgent(id); render(); }
+async function newAgent() { const name = prompt('Agent name'); if (!name) return; const firm = prompt('Brokerage') || ''; const email = prompt('Email') || ''; const area = prompt('Coverage (neighborhoods)') || ''; await api('/agents', { method: 'POST', body: { name, firm, email, area, tier: 'New' } }); toast('Agent added'); render(); }
+
+/* ---------- Pipeline ---------- */
+views.pipeline = async () => {
+  const opps = await api('/opportunities');
+  const s = await api('/settings'); const W = JSON.parse(s.score_weights);
+  return header('Pipeline', 'Every opportunity, scored for fit.', 'Score = likelihood this becomes a $150K–$500K+ Egnatia project. Click any card for the reasons.', `<button class="btn sm" onclick="newOpp()">+ Add opportunity</button>`) +
+  `<div class="kanban">${STAGE_ORDER.map(st => { const items = opps.filter(o => o.stage === st).sort((a, b) => b.score - a.score); const sum = items.reduce((x, o) => x + (o.est_value || 0), 0); return `<div class="col"><div class="ch"><h3>${STAGES[st]}</h3><span class="sum mono">${items.length} · ${money(sum)}</span></div>${items.map(o => `<div class="card" onclick="showOpp('${o.id}')"><div class="addr">${esc(o.address)}</div><div class="m"><span>${esc(o.property_type || '')}</span><span class="mono">${money(o.est_value)}</span></div><div class="foot"><span class="s">${esc(o.agent?.name?.split(' ')[0] || '—')}${o.agent?.firm ? ' · ' + esc(o.agent.firm) : ''}</span>${st === 'won' ? '<span class="tag good">Won</span>' : `<span class="tag ${o.score >= 75 ? 'good' : o.score >= 50 ? 'warn' : 'crit'}">${o.score}</span>`}</div></div>`).join('')}</div>`; }).join('')}</div>
+  <div class="grid g2" style="margin-top:16px"><div class="panel"><div class="hd"><h2>What the score looks at</h2><span class="meta">Edit in Settings</span></div><div class="bd"><div class="bars">${[['Scope & property type', W.scope], ['Agent referral history', W.agent], ['Buyer signals', W.buyer], ['Transaction stage & timing', W.timing], ['Building constraints', W.constraints]].map(b => `<div class="bar"><span>${b[0]}</span><div class="tr"><div class="fl" style="width:${b[1] * 3}%"></div></div><span class="v mono">${b[1]}%</span></div>`).join('')}</div></div></div>
+  <div class="panel"><div class="hd"><h2>Stalled</h2><span class="meta">${s.stalled_days}+ days in stage</span></div><div class="bd">${opps.filter(o => !['won', 'lost'].includes(o.stage) && o.days_in_stage >= Number(s.stalled_days)).map(o => `<div class="row click" onclick="showOpp('${o.id}')"><span class="dot ${o.days_in_stage >= 20 ? 'crit' : 'warn'}"></span><div class="grow"><div class="t">${esc(o.address)}</div><div class="s">${STAGES[o.stage]} for ${o.days_in_stage} days · ${esc(o.agent?.name || '')}</div></div><span class="mono">${money(o.est_value)}</span></div>`).join('') || '<div class="s">Nothing stalled.</div>'}</div></div></div>`;
+};
+async function showOpp(id) {
+  const o = await api(`/opportunities/${id}`);
+  const r = o.score_reasons;
+  openDrawer(`<div class="kicker s" style="letter-spacing:.08em;text-transform:uppercase;font-size:11.5px">${STAGES[o.stage]} · ${o.days_in_stage} days in stage</div><h2 style="margin-top:4px">${esc(o.address)}</h2><div class="s">${esc(o.neighborhood || '')} · ${esc(o.property_type || '')} · ${esc(o.scope || '')}</div>
+  <div style="display:flex;align-items:center;gap:14px;margin:16px 0">${scoreEl(o.score)}<div><div style="font-weight:500">Likelihood of becoming an Egnatia project</div><div class="s">Estimated value <span class="mono">${money(o.est_value)}</span> · ${esc(o.timeline || '')}</div></div></div>
+  <dl class="kv"><dt>Stage</dt><dd><select onchange="patchOpp('${o.id}',{stage:this.value})">${Object.entries(STAGES).map(([k, v]) => `<option value="${k}" ${o.stage === k ? 'selected' : ''}>${v}</option>`).join('')}</select></dd><dt>Buyer</dt><dd>${esc(o.contact?.name || '—')}</dd><dt>Agent</dt><dd>${o.agent ? `<a href="#" onclick="event.preventDefault();showAgent('${o.agent.id}')">${esc(o.agent.name)}</a> · ${esc(o.agent.firm || '')}` : '—'}</dd><dt>Est. value</dt><dd><input type="number" value="${o.est_value || ''}" onchange="patchOpp('${o.id}',{est_value:Number(this.value)})"></dd><dt>Timeline</dt><dd><input type="text" value="${esc(o.timeline || '')}" onchange="patchOpp('${o.id}',{timeline:this.value})"></dd><dt>Buyer signals</dt><dd><input type="text" value="${esc(o.buyer_signals || '')}" onchange="patchOpp('${o.id}',{buyer_signals:this.value})"></dd><dt>Constraints</dt><dd><input type="text" value="${esc(o.constraints.join(', '))}" placeholder="Co-op, LPC, Alt-1…" onchange="patchOpp('${o.id}',{constraints:this.value.split(',').map(s=>s.trim()).filter(Boolean)})"></dd></dl>
+  <div class="section-label">Why it scores this way</div><ul class="reasons">${r.reasons.map(x => `<li><span>${esc(x)}</span></li>`).join('')}${r.negs.map(x => `<li class="neg"><span>${esc(x)}</span></li>`).join('')}</ul>
+  ${o.memos.length ? `<div class="section-label">Memos</div>${o.memos.map(m => `<div class="row"><div class="grow"><div class="t">Walkthrough memo · ${m.status}</div><div class="s">${fmtDate(m.created_at)}</div></div><button class="btn sm" onclick="viewMemo('${m.id}')">Open</button></div>`).join('')}` : ''}
+  <div class="section-label">Timeline</div><ul class="tl">${o.activities.map(h => `<li><span class="when">${fmtDate(h.occurred_at)}</span><div><b style="font-weight:500">${h.kind}</b> <span class="who">· ${esc(h.summary)}</span></div></li>`).join('') || '<li><span class="when"></span><span class="s">Nothing yet.</span></li>'}</ul>
+  <div style="display:flex;gap:8px;margin-top:18px"><button class="btn primary sm" onclick="state.memoOpp='${o.id}';closeDrawer();go('memo')">Write walkthrough memo</button><button class="btn sm" onclick="logOpp('${o.id}')">Log activity</button></div>`);
+}
+async function patchOpp(id, body) { await api(`/opportunities/${id}`, { method: 'PATCH', body }); toast('Saved and rescored'); showOpp(id); }
+async function logOpp(id) { const summary = prompt('What happened?'); if (!summary) return; await api(`/opportunities/${id}/log`, { method: 'POST', body: { summary } }); showOpp(id); }
+async function newOpp() {
+  const agents = await api('/agents'); const address = prompt('Address'); if (!address) return;
+  const neighborhood = prompt('Neighborhood') || ''; const property_type = prompt('Property type (Brownstone / Townhouse / Co-op / Condo / Loft)') || ''; const scope = prompt('Scope') || ''; const est_value = Number(prompt('Estimated value ($)') || 0);
+  const agentName = prompt('Referring agent (name)\n' + agents.map(a => '· ' + a.name).join('\n')) || ''; const agent = agents.find(a => a.name.toLowerCase().startsWith(agentName.toLowerCase())) ;
+  const buyer = prompt('Buyer name') || ''; let contact_id = null; if (buyer) { const c = await api('/contacts', { method: 'POST', body: { name: buyer } }); contact_id = c.id; }
+  await api('/opportunities', { method: 'POST', body: { address, neighborhood, property_type, scope, est_value, agent_id: agent?.id || null, contact_id } }); toast('Opportunity added and scored'); render();
+}
+
+/* ---------- Walkthrough memo ---------- */
+views.memo = async () => {
+  const opps = (await api('/opportunities')).filter(o => !['won', 'lost'].includes(o.stage));
+  const sel = state.memoOpp || opps.find(o => o.stage === 'walked')?.id || opps[0]?.id;
+  return header('Walkthrough → memo', 'From voice notes to a client-ready memo in minutes.', 'Paste or dictate your walkthrough notes (on your phone: use the mic key). The memo drafts itself in Egnatia’s format; you review and send.') +
+  `<div class="wt"><div class="panel"><div class="hd"><h2>Walkthrough notes</h2></div><div class="bd">
+    <label class="f">Property</label><select id="memoOpp">${opps.map(o => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>${esc(o.address)} — ${esc(o.agent?.name || '')}</option>`).join('')}</select>
+    <label class="f">Notes (transcribed voice notes, bullet points, anything)</label><textarea id="memoNotes" style="min-height:260px" placeholder="Parlor floor: plaster shot on the east wall, pocket doors salvageable… Kitchen to garden level, new gas line… Panel 100A needs 200… Ballpark 360 to 400 keeping the stair.">${esc(state.memoNotes || '')}</textarea>
+    <label class="f">Photo labels (optional, comma-separated)</label><input type="text" id="memoPhotos" placeholder="Parlor east wall, Panel 100A, Rear facade">
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn accent" id="genBtn" onclick="genMemo()">Generate memo</button></div>
+    <p class="note" style="margin-top:14px">Voice notes: record on your phone, use the keyboard’s dictation to paste text here. Audio-file transcription can be added when you want it.</p>
+  </div></div>
+  <div class="panel"><div class="hd"><h2>Pre-purchase renovation memo</h2><span class="meta" id="memoMeta">Not yet generated</span></div><div class="bd memo" id="memoOut"><div class="empty">Press <b>Generate memo</b>.</div></div></div></div>`;
+};
+async function genMemo() {
+  const opportunity_id = $('#memoOpp').value, notes = $('#memoNotes').value.trim(); state.memoNotes = notes; state.memoOpp = opportunity_id;
+  if (!notes) return toast('Add some notes first');
+  const btn = $('#genBtn'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Generating…';
+  try { const r = await api('/memos/generate', { method: 'POST', body: { opportunity_id, notes, photos: $('#memoPhotos').value.split(',').map(s => s.trim()).filter(Boolean) } }); showMemoHtml(r.id, r.html); toast('Memo drafted. Stage set to Walked.'); }
+  catch (e) { toast('Error: ' + e.message); } finally { btn.disabled = false; btn.textContent = 'Generate memo'; }
+}
+function showMemoHtml(id, html) { $('#memoMeta').textContent = 'Draft · ready for your review'; $('#memoOut').innerHTML = html + `<div style="display:flex;gap:8px;margin-top:14px"><button class="btn primary sm" onclick="sendMemo('${id}')">Approve &amp; ${state.status.gmail.connected ? 'send to agent + buyer' : 'log as sent'}</button><button class="btn sm" onclick="copyMemo()">Copy HTML</button></div>`; }
+async function sendMemo(id) { const r = await api(`/memos/${id}/send`, { method: 'POST' }); toast(r.sent_via === 'gmail' ? 'Sent to agent and buyer.' : 'Logged as sent (connect Gmail to send for real).'); $('#memoMeta').textContent = 'Sent'; }
+async function viewMemo(id) { const m = await api(`/memos/${id}`); closeDrawer(); state.memoOpp = m.opportunity_id; state.memoNotes = m.notes_text; await go('memo'); setTimeout(() => showMemoHtml(m.id, m.memo_html), 50); }
+function copyMemo() { navigator.clipboard.writeText($('#memoOut').innerHTML); toast('Copied'); }
+
+/* ---------- Inbox ---------- */
+views.inbox = async () => {
+  const list = await api('/inbox'); const g = state.status.gmail;
+  return header('Inbox agent', 'Your inbox, filed and acted on.', 'Reads incoming mail, works out which agent, buyer or project it belongs to, logs it, and queues any reply for your approval.',
+    `${g.connected ? `<button class="btn sm" onclick="pollGmail()">Pull from Gmail</button>` : `<span class="pill">Gmail not connected</span>`}<button class="btn sm" onclick="addMail()">+ Paste an email</button><button class="btn primary sm" onclick="processInbox()">Process new</button>`) +
+  `<div class="panel"><div class="hd"><h2>Messages</h2><span class="meta">${list.filter(i => i.status === 'new').length} new · ${list.filter(i => i.status === 'filed').length} filed · ${list.filter(i => i.status === 'needs_review').length} need review</span></div><div class="bd">
+  ${list.map(m => `<div class="row" style="align-items:flex-start"><div class="avatar navy" style="font-size:11px">${initials(m.from_name)}</div><div class="grow"><div class="t">${esc(m.subject)} <span class="tag ${m.status === 'filed' ? 'good' : m.status === 'new' ? 'neutral' : 'warn'}">${m.status.replace('_', ' ')}</span></div><div class="s">${esc(m.from_name)} &lt;${esc(m.from_email)}&gt; · ${fmtDate(m.received_at)}</div>${m.actions.length ? `<ul class="reasons" style="margin-top:6px">${m.actions.map(a => `<li><span>${esc(a)}</span></li>`).join('')}</ul>` : `<div class="s" style="margin-top:4px;white-space:pre-wrap">${esc(m.body.slice(0, 240))}</div>`}</div></div>`).join('') || '<div class="s">No messages yet.</div>'}
+  </div></div>
+  <div class="grid g2" style="margin-top:16px"><div class="panel"><div class="hd"><h2>What it handles</h2></div><div class="bd"><ul class="reasons"><li><span>Files every email to the right agent, buyer or project</span></li><li><span>Pulls dates and decisions into the record</span></li><li><span>Routes supplier invoices and DOB notices</span></li><li><span>Drafts replies in your voice for one-click approval</span></li></ul></div></div>
+  <div class="panel"><div class="hd"><h2>What it never does</h2></div><div class="bd"><ul class="reasons"><li class="neg"><span>Send anything without your approval</span></li><li class="neg"><span>Quote a price you haven’t set</span></li><li class="neg"><span>Delete or move original emails</span></li><li class="neg"><span>Touch anything but the connected Egnatia address</span></li></ul></div></div></div>`;
+};
+async function processInbox() { toast('Processing…'); const r = await api('/inbox/process', { method: 'POST', body: {} }); toast(`${r.processed} messages filed`); render(); }
+async function pollGmail() { toast('Pulling…'); const r = await api('/inbox/poll', { method: 'POST' }); toast(`${r.pulled} new messages`); render(); }
+async function addMail() { const from_name = prompt('From (name)'); if (!from_name) return; const from_email = prompt('From (email)') || ''; const subject = prompt('Subject') || ''; const body = prompt('Body') || ''; await api('/inbox', { method: 'POST', body: { from_name, from_email, subject, body } }); render(); }
+
+/* ---------- Settings ---------- */
+views.settings = async () => {
+  const s = await api('/settings'); const g = state.status.gmail; const cad = JSON.parse(s.cadence_days); const W = JSON.parse(s.score_weights);
+  return header('Settings', 'The rules are yours.', 'Cadence, score weights, your voice, and connections. Everything the AI does starts from what you set here.') +
+  `<div class="grid g2">
+    <div class="panel"><div class="hd"><h2>Connections</h2></div><div class="bd">
+      <div class="row"><div class="grow"><div class="t">AI drafting</div><div class="s">${state.status.ai === 'claude' ? 'Claude connected' : 'Mock mode: templated drafts. Add ANTHROPIC_API_KEY to the server to switch to Claude.'}</div></div><span class="tag ${state.status.ai === 'claude' ? 'good' : 'neutral'}">${state.status.ai}</span></div>
+      <div class="row"><div class="grow"><div class="t">Gmail</div><div class="s">${g.connected ? 'Connected as ' + esc(g.email) : g.configured ? 'Not connected' : 'Add GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET to the server, then connect.'}</div></div>${g.connected ? `<button class="btn sm" onclick="disconnectGmail()">Disconnect</button>` : g.configured ? `<a class="btn primary sm" href="/auth/google">Connect Gmail</a>` : ''}</div>
+    </div></div>
+    <div class="panel"><div class="hd"><h2>Cadence &amp; clocks</h2></div><div class="bd">
+      ${['Core', 'Growth', 'New', 'Dormant'].map(t => `<label class="f">${t} agents: touch every (days)</label><input type="number" id="cad-${t}" value="${cad[t] ?? 30}">`).join('')}
+      <label class="f">Estimate check-in (days)</label><input type="number" id="s-estimate_checkin_days" value="${s.estimate_checkin_days}">
+      <label class="f">Memo due after walkthrough (hours)</label><input type="number" id="s-memo_due_hours" value="${s.memo_due_hours}">
+      <label class="f">Stalled after (days in stage)</label><input type="number" id="s-stalled_days" value="${s.stalled_days}">
+      <label class="f">Minimum project value ($)</label><input type="number" id="s-min_project_value" value="${s.min_project_value}">
+    </div></div>
+    <div class="panel"><div class="hd"><h2>Score weights</h2><span class="meta">Should total 100</span></div><div class="bd">${Object.entries({ scope: 'Scope & property type', agent: 'Agent referral history', buyer: 'Buyer signals', timing: 'Stage & timing', constraints: 'Building constraints' }).map(([k, l]) => `<label class="f">${l}</label><input type="number" id="w-${k}" value="${W[k]}">`).join('')}</div></div>
+    <div class="panel"><div class="hd"><h2>Voice &amp; identity</h2></div><div class="bd">
+      <label class="f">Owner name</label><input type="text" id="s-owner_name" value="${esc(s.owner_name)}">
+      <label class="f">Company</label><input type="text" id="s-company" value="${esc(s.company)}">
+      <label class="f">Voice profile (how the AI writes as you)</label><textarea id="s-voice_profile" style="min-height:160px">${esc(s.voice_profile)}</textarea>
+      <label class="f">Memo disclaimer</label><textarea id="s-memo_disclaimer" style="min-height:80px">${esc(s.memo_disclaimer)}</textarea>
+    </div></div>
+  </div><div style="margin-top:16px"><button class="btn primary" onclick="saveSettings()">Save settings</button></div>`;
+};
+async function saveSettings() {
+  const body = {};
+  for (const k of ['estimate_checkin_days', 'memo_due_hours', 'stalled_days', 'min_project_value', 'owner_name', 'company', 'voice_profile', 'memo_disclaimer']) body[k] = $(`#s-${k}`).value;
+  body.cadence_days = Object.fromEntries(['Core', 'Growth', 'New', 'Dormant'].map(t => [t, Number($(`#cad-${t}`).value)]));
+  body.score_weights = Object.fromEntries(['scope', 'agent', 'buyer', 'timing', 'constraints'].map(k => [k, Number($(`#w-${k}`).value)]));
+  await api('/settings', { method: 'PATCH', body }); toast('Saved and rescored');
+}
+async function disconnectGmail() { await fetch('/auth/google/disconnect', { method: 'POST' }); toast('Disconnected'); render(); }
+
+if (new URLSearchParams(location.search).get('connected')) { toast('Gmail connected'); history.replaceState(null, '', '/'); }
+render();
+</script>
+</body>
+</html>

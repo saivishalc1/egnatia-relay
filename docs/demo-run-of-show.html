@@ -1,0 +1,677 @@
+<title>Egnatia Relay Run of Show</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F2F1EC; --panel:#FFFFFF; --panel2:#F8F7F3; --line:#DAD8CF; --line2:#E9E7E0;
+  --ink:#1B2431; --ink2:#4A5260; --ink3:#7B8290;
+  --accent:#B0812A; --accent-ink:#7D5A17; --accent-soft:#F4EAD3;
+  --navy:#1B2431; --navy-ink:#F2F1EC; --navy-muted:#9AA3B0;
+  --good:#2E7D4F; --good-soft:#DFF0E5; --warn:#B26B00; --warn-soft:#FBEBD0; --crit:#B3362B; --crit-soft:#F8DEDA;
+  --say-bg:#FBFAF7;
+  --shadow:0 1px 2px rgba(27,36,49,.06),0 8px 24px rgba(27,36,49,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15191F; --panel:#1D2229; --panel2:#232930; --line:#343B45; --line2:#2A3039;
+    --ink:#ECEAE3; --ink2:#B6BAC2; --ink3:#7F8792;
+    --accent:#D6A542; --accent-ink:#E8C57A; --accent-soft:#3A2F17;
+    --navy:#10141A; --navy-ink:#ECEAE3; --navy-muted:#7F8792;
+    --good:#5CC48A; --good-soft:#1C3527; --warn:#E5A23A; --warn-soft:#3A2C12; --crit:#EF7B6E; --crit-soft:#41211D;
+    --say-bg:#1A1F26;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15191F; --panel:#1D2229; --panel2:#232930; --line:#343B45; --line2:#2A3039;
+  --ink:#ECEAE3; --ink2:#B6BAC2; --ink3:#7F8792;
+  --accent:#D6A542; --accent-ink:#E8C57A; --accent-soft:#3A2F17;
+  --navy:#10141A; --navy-ink:#ECEAE3; --navy-muted:#7F8792;
+  --good:#5CC48A; --good-soft:#1C3527; --warn:#E5A23A; --warn-soft:#3A2C12; --crit:#EF7B6E; --crit-soft:#41211D;
+  --say-bg:#1A1F26;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.55;padding-inline:20px;padding-block:0 64px}
+h1,h2,h3,h4{font-family:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;margin:0;text-wrap:balance;letter-spacing:-.01em;font-weight:600}
+h1{font-size:34px;line-height:1.1}
+h2{font-size:24px;line-height:1.15}
+h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent-ink)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;font-size:.93em}
+.kicker{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);font-weight:500}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* masthead */
+.mast{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end;padding-block:40px 28px;border-bottom:2px solid var(--ink)}
+.mast .lede{max-width:62ch;color:var(--ink2);margin-top:10px;font-size:16px}
+.mast .brand{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:13px;letter-spacing:.02em;color:var(--ink2);margin-bottom:8px}
+.facts{display:grid;grid-template-columns:repeat(2,auto);gap:6px 22px;font-size:13px;color:var(--ink2);align-self:end;white-space:nowrap}
+.facts dt{color:var(--ink3);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
+.facts dd{margin:0}
+.facts .mono{font-size:14px;color:var(--ink)}
+
+/* layout */
+.page{display:grid;grid-template-columns:200px minmax(0,1fr);gap:40px;margin-top:28px}
+.rail{position:sticky;top:20px;align-self:start}
+.rail .kicker{margin-bottom:10px}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.rail a{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:baseline;padding:6px 8px;border-radius:6px;color:var(--ink2);text-decoration:none;font-size:13.5px}
+.rail a:hover{background:var(--panel2);color:var(--ink)}
+.rail a .n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink3)}
+.rail a .t{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink3)}
+.rail .total{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+.rail .total b{color:var(--ink);font-weight:500}
+
+main{display:flex;flex-direction:column;gap:56px;min-width:0}
+
+/* prep card */
+.prep{background:var(--navy);color:var(--navy-ink);border-radius:10px;padding:26px 28px;display:grid;grid-template-columns:1.1fr 1fr;gap:28px}
+.prep h2{color:var(--navy-ink);font-size:20px;margin-bottom:12px}
+.prep ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;font-size:14px}
+.prep li{display:grid;grid-template-columns:18px 1fr;gap:8px}
+.prep li::before{content:"";width:10px;height:10px;border:1.5px solid var(--navy-muted);border-radius:3px;margin-top:5px}
+.prep .kicker{color:var(--navy-muted)}
+.prep code,.cmd{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.cmd{display:block;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;word-break:break-all;color:var(--navy-ink)}
+.prep .warnline{margin-top:14px;padding:10px 12px;border-radius:6px;background:rgba(214,165,66,.14);border:1px solid rgba(214,165,66,.35);font-size:13.5px}
+.prep .warnline b{font-weight:600}
+
+/* storyline */
+.story{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:22px 26px}
+.story h2{font-size:20px;margin-bottom:6px}
+.story p{color:var(--ink2);max-width:70ch}
+.story .thread{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:18px;border-top:1px solid var(--line2)}
+.story .thread div{padding:12px 12px 0 0;border-right:1px solid var(--line2);font-size:13.5px;color:var(--ink2)}
+.story .thread div:last-child{border-right:0}
+.story .thread div+div{padding-left:12px}
+.story .thread b{display:block;color:var(--ink);font-weight:500;margin-bottom:2px}
+.story .thread .mono{color:var(--ink3);font-size:11.5px;display:block;margin-bottom:6px}
+
+/* screen sections */
+.screen{scroll-margin-top:16px}
+.screen .head{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end;padding-bottom:12px;border-bottom:1px solid var(--ink);margin-bottom:20px}
+.screen .head .kicker{margin-bottom:6px}
+.screen .head p{color:var(--ink2);margin-top:6px;max-width:64ch}
+.screen .time{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink3);white-space:nowrap;padding-bottom:4px}
+.screen .time b{color:var(--ink);font-weight:500}
+.cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:28px;align-items:start}
+
+.do h3,.say h3,.onscreen h3,.ask h3{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);font-family:"IBM Plex Sans",sans-serif;font-weight:500;margin-bottom:10px}
+.do ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:step}
+.do li{display:grid;grid-template-columns:26px 1fr;gap:10px;font-size:14px;color:var(--ink2);counter-increment:step}
+.do li::before{content:counter(step);font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent-ink);background:var(--accent-soft);border-radius:50%;width:22px;height:22px;display:inline-grid;place-items:center;margin-top:1px}
+.do li b{color:var(--ink);font-weight:500}
+.ui{display:inline-block;border:1px solid var(--line);background:var(--panel);border-radius:5px;padding:0 6px;font-size:12.5px;color:var(--ink);white-space:nowrap;line-height:1.6}
+
+.say{background:var(--say-bg);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:16px 20px 18px}
+.say p{font-size:16.5px;line-height:1.6;color:var(--ink);max-width:62ch}
+.say p+p{margin-top:12px}
+.say .beat{font-size:12px;color:var(--ink3);font-style:italic;margin-top:12px}
+
+.onscreen{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.onscreen h3{padding:10px 14px 0}
+.onscreen .tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-weight:500;color:var(--ink3);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid var(--line2)}
+td{padding:8px 14px;border-bottom:1px solid var(--line2);vertical-align:top;color:var(--ink2)}
+td:first-child{color:var(--ink)}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+.stats>div{padding:12px 14px;border-right:1px solid var(--line2)}
+.stats>div:last-child{border-right:0}
+.stats .lbl{font-size:11.5px;color:var(--ink3);letter-spacing:.05em;text-transform:uppercase}
+.stats .val{font-family:"Bricolage Grotesque",sans-serif;font-size:24px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.stats .sub{font-size:12.5px;color:var(--ink2)}
+
+.tag{display:inline-block;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.tag.crit{background:var(--crit-soft);color:var(--crit)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.good{background:var(--good-soft);color:var(--good)}
+.tag.neutral{background:var(--panel2);color:var(--ink2);border:1px solid var(--line)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot.crit{background:var(--crit)}.dot.warn{background:var(--warn)}.dot.neutral{background:var(--ink3)}.dot.good{background:var(--good)}
+
+.ask{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 24px}
+.ask h3{grid-column:1/-1;margin-bottom:0}
+.ask .qa{font-size:13.5px;color:var(--ink2)}
+.ask .qa b{display:block;color:var(--ink);font-weight:500}
+
+.notes{background:var(--panel);border:1px dashed var(--line);border-radius:8px;padding:12px 14px;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.6;color:var(--ink);white-space:pre-wrap;margin-top:8px}
+.memo{margin-top:14px;font-family:Georgia,"Times New Roman",serif;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 20px;font-size:14px;color:var(--ink)}
+.memo .h{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:12px 0 4px;font-family:"IBM Plex Sans",sans-serif}
+.memo .h:first-child{margin-top:0}
+.memo ul{margin:0;padding-left:18px}
+.memo table td{font-family:Georgia,serif;font-size:13.5px}
+
+.close{border-top:2px solid var(--ink);padding-top:20px}
+.close .cols{grid-template-columns:1fr 1fr}
+.close ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+.close li+li{margin-top:5px}
+
+@media (max-width:900px){
+  .page{grid-template-columns:1fr;gap:24px}
+  .rail{position:static}
+  .rail ol{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .rail a{grid-template-columns:auto auto;border:1px solid var(--line);background:var(--panel)}
+  .rail a .t{display:none}
+  .rail .total{display:none}
+  .cols,.close .cols,.prep{grid-template-columns:1fr}
+  .mast{grid-template-columns:1fr}
+  .facts{white-space:normal}
+  .story .thread{grid-template-columns:1fr 1fr}
+  .story .thread div{border-right:0;padding-left:0;border-bottom:1px solid var(--line2);padding-bottom:10px}
+  .stats{grid-template-columns:1fr 1fr}
+  .stats>div{border-bottom:1px solid var(--line2)}
+}
+@media (max-width:520px){
+  h1{font-size:28px}
+  .stats{grid-template-columns:1fr}
+  .story .thread{grid-template-columns:1fr}
+}
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <div>
+    <div class="brand">Keres AI · for Egnatia Construction</div>
+    <h1>Egnatia Relay, screen by screen</h1>
+    <p class="lede">A talk track for the live demo. Eight screens in the order they sit in the app's left rail, each with what to click, what appears, and what to say. One storyline runs through all of it: a brownstone walked yesterday whose memo is overdue.</p>
+  </div>
+  <dl class="facts">
+    <dt>Open</dt><dd class="mono">http://localhost:3001</dd>
+    <dt>Password</dt><dd class="mono">change-me</dd>
+    <dt>Mode</dt><dd>AI mock · Gmail off</dd>
+    <dt>Runtime</dt><dd class="mono">≈ 22 min + questions</dd>
+  </dl>
+</header>
+
+<div class="page">
+<nav class="rail" aria-label="Run of show">
+  <div class="kicker">Run of show</div>
+  <ol>
+    <li><a href="#prep"><span class="n">00</span><span>Before the call</span><span class="t"></span></a></li>
+    <li><a href="#story"><span class="n">··</span><span>The storyline</span><span class="t"></span></a></li>
+    <li><a href="#s1"><span class="n">01</span><span>Agents → Opportunities</span><span class="t">2m</span></a></li>
+    <li><a href="#s2"><span class="n">02</span><span>Today</span><span class="t">2m</span></a></li>
+    <li><a href="#s3"><span class="n">03</span><span>Follow-ups</span><span class="t">4m</span></a></li>
+    <li><a href="#s4"><span class="n">04</span><span>Agents</span><span class="t">2m</span></a></li>
+    <li><a href="#s5"><span class="n">05</span><span>Pipeline</span><span class="t">3m</span></a></li>
+    <li><a href="#s6"><span class="n">06</span><span>Walkthrough memo</span><span class="t">4m</span></a></li>
+    <li><a href="#s7"><span class="n">07</span><span>Inbox agent</span><span class="t">3m</span></a></li>
+    <li><a href="#s8"><span class="n">08</span><span>Settings</span><span class="t">2m</span></a></li>
+    <li><a href="#close"><span class="n">09</span><span>Close the loop</span><span class="t">1m</span></a></li>
+  </ol>
+  <div class="total">Sample data, not Egnatia's records. <b>Numbers age one day per day</b> since the seed; reseed the morning of the call.</div>
+</nav>
+
+<main>
+
+<section class="prep" id="prep">
+  <div>
+    <div class="kicker">00 · Before the call</div>
+    <h2>Ten-minute checklist</h2>
+    <ul>
+      <li>Server is up. In a terminal from the project folder run <code>npm start</code> if it is not. Browser tab open at <code>http://localhost:3001</code>, signed in with <code>change-me</code>.</li>
+      <li>You land on <b>Agents → Opportunities</b>. Leave it there. Press <code>Esc</code> to close any open drawer.</li>
+      <li>Browser zoom at 110%. The left rail badge reads <b>Follow-ups 9</b>. If it reads anything else, reseed (right).</li>
+      <li>Do <b>not</b> press <b>Process new</b> on Inbox or <b>Generate memo</b> before the call. Both are the payoff moments.</li>
+      <li>Copy the walkthrough notes from screen 06 into a scratch note so you can paste them in one go.</li>
+      <li>Have the roadmap answers from screen 09 in your head: texts, audio transcription, calendar, DOB lookups.</li>
+    </ul>
+  </div>
+  <div>
+    <div class="kicker">Reset to exactly this script</div>
+    <p style="font-size:14px;margin-top:6px">Wipes the sample database and reseeds it dated from now. Then reload the browser tab. Safe to run between back-to-back demos.</p>
+    <span class="cmd">cd /Users/sai/Downloads/egnatia-relay
+npm run seed -- --reset</span>
+    <div class="warnline"><b>Mock mode caveats.</b> AI drafts are templates, so <b>Redraft</b> returns the same text; skip it or say "with Claude connected this rewrites to your instruction." Approvals log as sent rather than emailing. Say this once, early, and it stops being a question.</div>
+  </div>
+</section>
+
+<section class="story" id="story">
+  <div class="kicker">The thread to pull</div>
+  <h2>One property carries the whole demo</h2>
+  <p>57 Prospect Pl is a Park Slope-adjacent brownstone that Marisol Vega brought. Elona walked it yesterday with the buyer, Chidi Adeyemi. The 24-hour memo clock has run out, Chidi has emailed asking about "the stair question," and he bids Friday. Every screen touches it, and by the end the memo is written, sent, and the overdue item is gone.</p>
+  <div class="thread">
+    <div><span class="mono">02 · Today</span><b>It is the priority list</b>Score 72, $380K, "Bidding this week."</div>
+    <div><span class="mono">03 · Follow-ups</span><b>Memo due is overdue</b>"Walked 24 hours ago and no memo has gone out."</div>
+    <div><span class="mono">06 · Memo</span><b>Notes become the memo</b>Paste the stair notes. Approve. The overdue item disappears.</div>
+    <div><span class="mono">07 · Inbox</span><b>Chidi's email files itself</b>"Buyer bidding by Friday" lands on the record.</div>
+  </div>
+</section>
+
+<!-- ===================== 01 ===================== -->
+<section class="screen" id="s1">
+  <div class="head">
+    <div><div class="kicker">Screen 01 · rail: Agents → Opportunities</div><h2>The thesis in one screen</h2><p>Headline on the page: "One system for the way Egnatia wins work." This is where you land after sign-in.</p></div>
+    <div class="time"><b>2 min</b> · 0:00–2:00</div>
+  </div>
+  <div class="cols">
+    <div class="do">
+      <h3>Do</h3>
+      <ol>
+        <li><span>Point at the four stat tiles across the top. Don't click yet.</span></li>
+        <li><span>Point at <b>The chain</b> panel on the right: five bars, 10 → 7 → 4 → 3 → 2.</span></li>
+        <li><span>Run a finger down the <b>What happens next</b> column in the by-agent table. Every agent has a next action or "On cadence."</span></li>
+        <li><span>Click <b>Marisol Vega</b>. The drawer shows her two opportunities and a queued "memo due" draft. Press <span class="ui">Esc</span>.</span></li>
+        <li><span>Note the <span class="ui">Run the rules now</span> button top right. You'll press it on screen 08.</span></li>
+      </ol>
+    </div>
+    <div class="say">
+      <h3>Say</h3>
+      <p>"Egnatia wins work one way: an agent brings a buyer, you walk the property, the buyer gets a memo, and some of those become projects. This screen is that chain, per agent. Ten referrals, seven walked, four with a written memo, three estimates, two won. One in five. That's the pilot target, and it's already the number here."</p>
+      <p>"The last column is the point of the product. For every agent the system already knows what should happen next. Marisol has a memo overdue. Grace has a walkthrough tomorrow. Victor has gone cold. Nobody had to remember any of that."</p>
+      <p class="beat">Beat: this is sample data, shaped like Egnatia's business, not their records.</p>
+    </div>
+  </div>
+  <div class="onscreen">
+    <h3>On screen</h3>
+    <div class="stats">
+      <div><div class="lbl">Active agent relationships</div><div class="val">8</div><div class="sub">3 core · 3 growth · 2 new</div></div>
+      <div><div class="lbl">Walkthroughs</div><div class="val">7</div><div class="sub">4 with a written memo</div></div>
+      <div><div class="lbl">Qualified opportunities</div><div class="val">7</div><div class="sub">$150K+ and scored 50+ · $2.75M active</div></div>
+      <div><div class="lbl">Referral → project</div><div class="val">1 in 5</div><div class="sub">Pilot goal: 1 in 5</div></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Agent</th><th class="num">Refs</th><th class="num">Walked</th><th class="num">Won</th><th class="num">Pipeline</th><th class="num">Last touch</th><th>What happens next</th></tr></thead>
+      <tbody>
+        <tr><td>Marisol Vega · Compass · Core</td><td class="num">2</td><td class="num">2</td><td class="num">0</td><td class="num mono">$865K</td><td class="num mono">1d</td><td><span class="dot crit"></span>memo due · overdue</td></tr>
+        <tr><td>Aisha Bello · SERHANT. · Growth</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num mono">$520K</td><td class="num mono">12d</td><td><span class="dot good"></span>On cadence</td></tr>
+        <tr><td>Grace Lindqvist · Compass · New</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num mono">$450K</td><td class="num mono">2d</td><td><span class="dot warn"></span>walkthrough prep · due now</td></tr>
+        <tr><td>Daniel Okafor · Corcoran · Core</td><td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="num mono">$395K</td><td class="num mono">14d</td><td><span class="dot warn"></span>agent cold · due now</td></tr>
+        <tr><td>Priya Raman · Brown Harris Stevens · Core</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num mono">$310K</td><td class="num mono">9d</td><td><span class="dot warn"></span>estimate checkin · due now</td></tr>
+        <tr><td>Jonathan Reiss · Sotheby's · Growth</td><td class="num">2</td><td class="num">1</td><td class="num">1</td><td class="num mono">$165K</td><td class="num mono">7d</td><td><span class="dot warn"></span>walkthrough prep · due now</td></tr>
+        <tr><td>Tom Bracewell · Douglas Elliman · Growth</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num mono">$45K</td><td class="num mono">47d</td><td><span class="dot crit"></span>agent cold · overdue</td></tr>
+        <tr><td>Victor Hsu · Corcoran · New</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num mono">—</td><td class="num mono">58d</td><td><span class="dot crit"></span>agent cold · overdue</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ===================== 02 ===================== -->
+<section class="screen" id="s2">
+  <div class="head">
+    <div><div class="kicker">Screen 02 · rail: Today</div><h2>What Elona opens on Monday</h2><p>Headline reads "Good morning." with a one-paragraph brief underneath. Four tiles, then two panels, then two more.</p></div>
+    <div class="time"><b>2 min</b> · 2:00–4:00</div>
+  </div>
+  <div class="cols">
+    <div class="do">
+      <h3>Do</h3>
+      <ol>
+        <li><span>Click <span class="ui">Today</span> in the rail. Read the brief paragraph aloud, verbatim.</span></li>
+        <li><span>Point at <b>Hours saved · 7 days</b>. It reads <b>0</b> now. Say you'll come back to it.</span></li>
+        <li><span>Point at <b>Where to spend attention</b>. Ranked by likelihood × value, not by recency.</span></li>
+        <li><span>Point at <b>Handled without you</b> bottom right. It says "Nothing processed yet." That changes on screen 07.</span></li>
+        <li><span>Don't click into anything here. Move on.</span></li>
+      </ol>
+    </div>
+    <div class="say">
+      <h3>Say</h3>
+      <p>"This is the first thing Elona sees. The brief is written for her: nine follow-ups waiting, three overdue, $2.75M active across eight opportunities, two agents cold, and the single most important thing this week is 412 3rd St. That's a five-second read instead of an hour of remembering."</p>
+      <p>"The attention list isn't 'most recent.' It's the score times the dollar value. 412 3rd St is $485K at 83 percent, so it's first. 57 Prospect Pl, the brownstone she walked yesterday, is right behind it."</p>
+      <p>"Hours saved is zero because nothing has run yet this week. Watch it by the end of the demo."</p>
+    </div>
+  </div>
+  <div class="onscreen">
+    <h3>On screen</h3>
+    <div class="stats">
+      <div><div class="lbl">Follow-ups waiting</div><div class="val">9</div><div class="sub">3 overdue</div></div>
+      <div><div class="lbl">Active pipeline</div><div class="val">$2.75M</div><div class="sub">8 opportunities · $1.94M weighted</div></div>
+      <div><div class="lbl">Agents on cadence</div><div class="val">5 / 8</div><div class="sub">2 gone cold</div></div>
+      <div><div class="lbl">Hours saved · 7 days</div><div class="val">0</div><div class="sub">becomes ≈ 2.8 by the close</div></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Where to spend attention</th><th class="num">Score</th><th class="num">Value</th><th>Stage</th></tr></thead>
+      <tbody>
+        <tr><td>412 3rd St · Full gut, 3 floors · via Marisol Vega</td><td class="num mono">83</td><td class="num mono">$485K</td><td>Negotiating</td></tr>
+        <tr><td>71 Quincy St · Full gut + rear extension · via Aisha Bello</td><td class="num mono">71</td><td class="num mono">$520K</td><td>Estimate sent</td></tr>
+        <tr><td>229 Carroll St · Gut renovation, 2 units · via Grace Lindqvist</td><td class="num mono">65</td><td class="num mono">$450K</td><td>Walkthrough requested</td></tr>
+        <tr><td>57 Prospect Pl · Owner's duplex gut · via Marisol Vega</td><td class="num mono">72</td><td class="num mono">$380K</td><td>Walked</td></tr>
+        <tr><td>89 Hicks St · Garden + parlor combine · via Daniel Okafor</td><td class="num mono">67</td><td class="num mono">$395K</td><td>Walked</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ===================== 03 ===================== -->
+<section class="screen" id="s3">
+  <div class="head">
+    <div><div class="kicker">Screen 03 · rail: Follow-ups (badge 9)</div><h2>The follow-up queue</h2><p>Headline: "Nothing falls through the cracks." Nine cards, sorted overdue first. Each card has a rule name, a "Why now" line, an editable draft, and four buttons.</p></div>
+    <div class="time"><b>4 min</b> · 4:00–8:00</div>
+  </div>
+  <div class="cols">
+    <div class="do">
+      <h3>Do</h3>
+      <ol>
+        <li><span>Click <span class="ui">Follow-ups</span>. Scroll slowly once, top to bottom, so they see nine distinct cards. Scroll back up.</span></li>
+        <li><span>Read <b>Victor Hsu</b>'s card in full: the "Why now" line, then the draft. This is the anchor example.</span></li>
+        <li><span>Click into Victor's draft textarea and change one word, to show it's editable. Then press <span class="ui">Approve &amp; log as sent</span>. Toast: "Logged as sent." Badge drops to 8.</span></li>
+        <li><span>Point at <b>Daniel Okafor</b>'s "agent cold" card. It says <b>Draft text</b>, not email, and the draft is shorter with "— Elona." Channel comes from his profile.</span></li>
+        <li><span>Point at the <b>57 Prospect Pl · memo due</b> card, tagged Overdue. Say you'll clear it from the memo screen, not here.</span></li>
+        <li><span>On <b>Tom Bracewell</b>'s card press <span class="ui">Snooze 3d</span>. It greys out and the badge reads 7. Leave the rest.</span></li>
+      </ol>
+    </div>
+    <div class="say">
+      <h3>Say</h3>
+      <p>"Every card exists because a rule fired. Six rules run every night at six: an agent going cold, an estimate that's sat seven days, a walkthrough coming up, a memo past its 24-hour window, a won project four to ten weeks in, and an opportunity that's stalled in a stage. The system reads the whole book and puts what needs a touch in one place."</p>
+      <p>"Take Victor. He's a new relationship, coffee in July, said he had two brownstone buyers this fall, and then nothing for 58 days. The rule says new agents get a real touch every 30 days. The draft already knows about the buyers, because that's in his notes, and it makes one offer and one ask, in Elona's voice. She reads it, changes a word if she wants, approves. It's logged, his clock resets, and he drops off the cold list."</p>
+      <p>"Nothing sends without that approve button. Not a draft, not a memo, not a reply. That's the rule of the whole product."</p>
+      <p class="beat">If Gmail were connected the button would read "Approve &amp; send" and the email goes out from info@egnatiaconstruction.com.</p>
+    </div>
+  </div>
+  <div class="onscreen">
+    <h3>On screen · the nine cards, in order</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Rule</th><th>Who · where</th><th>Why now (as written on the card)</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>agent cold</td><td>Tom Bracewell · Douglas Elliman</td><td>Last heard from Egnatia 47 days ago. Growth agents get a touch every 30 days.</td><td><span class="tag crit">Overdue</span></td></tr>
+        <tr><td>agent cold</td><td>Victor Hsu · Corcoran</td><td>58 days. New agents every 30 days. Note: two brownstone buyers this fall.</td><td><span class="tag crit">Overdue</span></td></tr>
+        <tr><td>memo due</td><td>Marisol Vega · 57 Prospect Pl</td><td>Walked 24 hours ago and no memo has gone out. Rule: memo within 24 hours.</td><td><span class="tag crit">Overdue</span></td></tr>
+        <tr><td>agent cold</td><td>Daniel Okafor · Corcoran · <b>text</b></td><td>14 days. Core agents every 14 days. Likes short texts, not email.</td><td><span class="tag neutral">Due now</span></td></tr>
+        <tr><td>estimate checkin</td><td>Priya Raman · 155 W 86th St #9C</td><td>Estimate sent 9 days ago, no stage change. Check in at day 7. Buyer accepts scope.</td><td><span class="tag neutral">Due now</span></td></tr>
+        <tr><td>stalled</td><td>Daniel Okafor · 89 Hicks St · <b>text</b></td><td>Sat in "walked" for 14 days. Buyer mentioned getting a second bid.</td><td><span class="tag neutral">Due now</span></td></tr>
+        <tr><td>walkthrough prep</td><td>Jonathan Reiss · 24 Bond St #3</td><td>Walkthrough coming up (Viewing Thursday). Confirm, ask what the buyer cares about, set the 24-hour memo expectation.</td><td><span class="tag neutral">Due now</span></td></tr>
+        <tr><td>walkthrough prep</td><td>Grace Lindqvist · 229 Carroll St</td><td>Walkthrough tomorrow 10am. First walkthrough with Grace, a new relationship.</td><td><span class="tag neutral">Due now</span></td></tr>
+        <tr><td>won touch</td><td>Jonathan Reiss · 340 W 23rd St #6A</td><td>5 weeks in. Best moment to show progress and ask for the next introduction.</td><td><span class="tag neutral">Due now</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="ask">
+    <h3>If they ask</h3>
+    <div class="qa"><b>"What if I don't like the draft?"</b>Edit it in place, or Redraft with an instruction like "shorter, mention the Quincy St photos." With Claude connected it rewrites; in this mock it returns the template.</div>
+    <div class="qa"><b>"Will it nag me every day?"</b>No. Each rule creates at most one open item per agent or property. Approve, snooze, or dismiss it and it stays gone until the condition is genuinely new again.</div>
+    <div class="qa"><b>"Who decides the cadence?"</b>Elona. Core 14 days, Growth 30, New 30, Dormant 90 today. All editable on the Settings screen.</div>
+  </div>
+</section>
+
+<!-- ===================== 04 ===================== -->
+<section class="screen" id="s4">
+  <div class="head">
+    <div><div class="kicker">Screen 04 · rail: Agents</div><h2>The referral network</h2><p>Headline: "Your referral network, in one place." A single table, alphabetical, with a status pill per agent. Click any row for the drawer.</p></div>
+    <div class="time"><b>2 min</b> · 8:00–10:00</div>
+  </div>
+  <div class="cols">
+    <div class="do">
+      <h3>Do</h3>
+      <ol>
+        <li><span>Click <span class="ui">Agents</span>. Point at the <b>Tier · cadence</b> column, then the <b>Status</b> pills: On cadence, Slipping, Cold.</span></li>
+        <li><span>Point at Victor Hsu's row. Because you approved his follow-up, his last touch now reads <b>0d ago</b> and the pill is <b>On cadence</b>. Tom is still Cold.</span></li>
+        <li><span>Click <b>Priya Raman</b>. In the drawer: Tier dropdown, Channel, Notes ("Board packages are her pain point"), Opportunities (155 W 86th St #9C), History.</span></li>
+        <li><span>Change her Tier dropdown to <b>Growth</b> and back to <b>Core</b>. Toast: "Saved." Press <span class="ui">Esc</span>.</span></li>
+        <li><span>Point at <span class="ui">+ Add agent</span> top right. Don't add one.</span></li>
+      </ol>
+    </div>
+    <div class="say">
+      <h3>Say</h3>
+      <p>"Eight agents, three tiers. The tier is the only thing Elona has to decide: who's core, who's growing, who's new. The cadence follows from the tier and the system watches the clock. Victor was Cold five minutes ago. He's On cadence now because we approved one message."</p>
+      <p>"Open any agent and everything is on one card: how they like to be contacted, what they care about, what they've brought, every touch. Priya is a co-op specialist and board packages are her pain point. That note is why her estimate check-in draft offers a scope letter for the board instead of a generic 'any questions?'"</p>
+      <p>"Log a touch here when you have coffee with someone. The clock resets and the next reminder moves out."</p>
+    </div>
+  </div>
+  <div class="onscreen">
+    <h3>On screen · status column after step 2</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Agent</th><th>Coverage</th><th>Tier · cadence</th><th class="num">Last touch</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Aisha Bello · SERHANT.</td><td>Bed-Stuy · Clinton Hill</td><td>Growth · every 30 days</td><td class="num mono">12d</td><td><span class="tag good">On cadence</span></td></tr>
+        <tr><td>Daniel Okafor · Corcoran</td><td>Brooklyn Heights · Cobble Hill</td><td>Core · every 14 days</td><td class="num mono">14d</td><td><span class="tag warn">Slipping</span></td></tr>
+        <tr><td>Grace Lindqvist · Compass</td><td>Carroll Gardens · Gowanus</td><td>New · every 30 days</td><td class="num mono">2d</td><td><span class="tag good">On cadence</span></td></tr>
+        <tr><td>Jonathan Reiss · Sotheby's Intl</td><td>Chelsea · West Village</td><td>Growth · every 30 days</td><td class="num mono">7d</td><td><span class="tag good">On cadence</span></td></tr>
+        <tr><td>Marisol Vega · Compass</td><td>Park Slope · Prospect Heights</td><td>Core · every 14 days</td><td class="num mono">1d</td><td><span class="tag good">On cadence</span></td></tr>
+        <tr><td>Priya Raman · Brown Harris Stevens</td><td>Upper West Side</td><td>Core · every 14 days</td><td class="num mono">9d</td><td><span class="tag good">On cadence</span></td></tr>
+        <tr><td>Tom Bracewell · Douglas Elliman</td><td>Tribeca · Soho</td><td>Growth · every 30 days</td><td class="num mono">47d</td><td><span class="tag crit">Cold</span></td></tr>
+        <tr><td>Victor Hsu · Corcoran</td><td>Fort Greene · Boerum Hill</td><td>New · every 30 days</td><td class="num mono">0d</td><td><span class="tag good">On cadence</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ===================== 05 ===================== -->
+<section class="screen" id="s5">
+  <div class="head">
+    <div><div class="kicker">Screen 05 · rail: Pipeline</div><h2>Every opportunity, scored for fit</h2><p>Five kanban columns from Walkthrough requested to Won. Each card carries a 0–100 score. Below the board: the five score weights and a Stalled list.</p></div>
+    <div class="time"><b>3 min</b> · 10:00–13:00</div>
+  </div>
+  <div class="cols">
+    <div class="do">
+      <h3>Do</h3>
+      <ol>
+        <li><span>Click <span class="ui">Pipeline</span>. Read the column headers and sums left to right.</span></li>
+        <li><span>Click the <b>412 3rd St</b> card in Negotiating. Read "Why it scores this way" aloud: four reasons, one drag.</span></li>
+        <li><span>In the same drawer, change <b>Constraints</b> from "LPC district" to "LPC district, Co-op". Toast: "Saved and rescored." The score drops to 80 and a new red line appears: "Co-op board alteration agreement can add 6–12 weeks." Change it back. It returns to 83. <span class="ui">Esc</span>.</span></li>
+        <li><span>Click <b>145 Nassau St #12</b> in Walkthrough requested, score 32. Read the three drags. <span class="ui">Esc</span>.</span></li>
+        <li><span>Point at <b>What the score looks at</b>: 30 / 25 / 20 / 15 / 10. Then the <b>Stalled</b> panel: 89 Hicks St and 145 Nassau St.</span></li>
+      </ol>
+    </div>
+    <div class="say">
+      <h3>Say</h3>
+      <p>"The score is one question: how likely is this to become a $150K to $500K-plus Egnatia project? Five factors. Scope and property type, the agent's track record, what the buyer has signalled, where the deal is and whether it's moving, and the building's constraints. It's arithmetic, not a black box, and every card explains itself."</p>
+      <p>"412 3rd St is 83. Brownstone gut, $485K, the buyer approved the budget verbally at the walkthrough, closing October 15. The one drag is that it's in a landmarks district, so any facade work needs LPC. Add a co-op board to that and it drops three points, with the reason written out. Take it away and it's back."</p>
+      <p>"145 Nassau St is 32. One bathroom, $45K, well under the minimum, no movement in 20 days, and Tom hasn't been in touch. The system's suggestion is to refer it out. That's the point: spend Elona's week on the top of this list, not the bottom."</p>
+    </div>
+  </div>
+  <div class="onscreen">
+    <h3>On screen · the board</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Column</th><th>Cards (score)</th><th class="num">Sum</th></tr></thead>
+      <tbody>
+        <tr><td>Walkthrough requested</td><td>229 Carroll St (65) · 24 Bond St #3 (65) · 145 Nassau St #12 (32)</td><td class="num mono">3 · $660K</td></tr>
+        <tr><td>Walked</td><td>57 Prospect Pl (72) · 89 Hicks St (67)</td><td class="num mono">2 · $775K</td></tr>
+        <tr><td>Estimate sent</td><td>155 W 86th St #9C (71) · 71 Quincy St (71)</td><td class="num mono">2 · $830K</td></tr>
+        <tr><td>Negotiating</td><td>412 3rd St (83)</td><td class="num mono">1 · $485K</td></tr>
+        <tr><td>Won</td><td>340 W 23rd St #6A · 18 Sidney Pl</td><td class="num mono">2 · $450K</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tw"><table>
+      <thead><tr><th>412 3rd St · why it scores 83</th><th>145 Nassau St #12 · why it scores 32</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="dot good"></span>$485K scope; squarely in the $400K+ range<br><span class="dot good"></span>Brownstone gut: Egnatia's sweet spot<br><span class="dot good"></span>Buyer signal: budget range approved verbally at walkthrough<br><span class="dot good"></span>Timeline: Closing Oct 15<br><span class="dot crit"></span>Landmarks district: exterior/facade work needs LPC review</td>
+          <td><span class="dot crit"></span>$45K scope is well under the minimum; consider referring out<br><span class="dot crit"></span>No movement for 20 days<br><span class="dot crit"></span>Tom Bracewell hasn't been in touch for 47 days</td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="ask">
+    <h3>If they ask</h3>
+    <div class="qa"><b>"Can we change the weights?"</b>Yes, on Settings. Weights should total 100. Every card rescores the moment you save.</div>
+    <div class="qa"><b>"Why is a $520K job only 71?"</b>71 Quincy St: the owners already own it and asked about phasing, which reads as a hedge, plus an Alt-1 filing and rear-extension zoning drag the timeline. Big, but not certain.</div>
+  </div>
+</section>
+
+<!-- ===================== 06 ===================== -->
+<section class="screen" id="s6">
+  <div class="head">
+    <div><div class="kicker">Screen 06 · rail: Walkthrough memo</div><h2>Voice notes to a client-ready memo</h2><p>Two panels. Left: pick the property, paste notes, optional photo labels, Generate. Right: the memo renders in Egnatia's format with Approve and Copy HTML. This is the payoff.</p></div>
+    <div class="time"><b>4 min</b> · 13:00–17:00</div>
+  </div>
+  <div class="cols">
+    <div class="do">
+      <h3>Do</h3>
+      <ol>
+        <li><span>Click <span class="ui">Walkthrough memo</span>. In the <b>Property</b> dropdown choose <b>57 Prospect Pl — Marisol Vega</b>.</span></li>
+        <li><span>Paste the notes below into the Notes box. Type <b>Parlor east wall, Panel 100A, Rear facade</b> into Photo labels.</span></li>
+        <li><span>Press <span class="ui">Generate memo</span>. Give it a beat. Toast: "Memo drafted."</span></li>
+        <li><span>Scroll the memo on the right, section by section: Bottom line, Questions to settle before you bid, What we saw, Budget bands, Approvals &amp; timeline, Worth knowing, disclaimer.</span></li>
+        <li><span>Press <span class="ui">Approve &amp; log as sent</span>. Toast: "Logged as sent." Click <span class="ui">Follow-ups</span> in the rail: the 57 Prospect Pl memo-due card is gone. Badge reads 6.</span></li>
+      </ol>
+      <h3 style="margin-top:20px">Paste these notes</h3>
+      <div class="notes">Parlor floor: plaster shot on the east wall, pocket doors salvageable. Kitchen moves to the garden level, new gas line and waste stack. Three new baths, stack works. Panel is 100 amp with mixed BX and cloth, needs a full rewire and 200 amp service. Roof about 5 years old. Rear facade has some spalling. Ballpark 360 to 400 keeping the stair. Moving the stair is another 40 plus an Alt-1.</div>
+    </div>
+    <div class="say">
+      <h3>Say</h3>
+      <p>"Elona walked this yesterday with Marisol and the buyer, Chidi. He's bidding Friday and he's already emailed asking about the stair. Today the memo is a phone dictation that she types up at night. Here it's the same dictation, pasted in."</p>
+      <p>"Thirty seconds later: a pre-purchase renovation walkthrough on Egnatia letterhead. The bottom line is the number the buyer actually needs, $360K to $400K over seven to nine months, and what the stair costs on top. Then the two questions he should settle before he bids. Then what we saw, room by room. Budget bands, not a fake precise number. The approvals path in NYC terms: Alt-2 for the MEP, Alt-1 only if the stair moves, the ACP-5 asbestos survey because the building is pre-1987. And the disclaimer that this is a visual walkthrough, not an inspection."</p>
+      <p>"It only uses numbers from the notes. If she said 360 to 400, the memo says 360 to 400. It doesn't invent findings. Approve, and it goes to Marisol and Chidi together, and the overdue item clears itself."</p>
+      <p class="beat">This is the part that makes the agent look good. That's the referral engine.</p>
+    </div>
+  </div>
+  <div class="onscreen">
+    <h3>On screen · what the memo will say for these notes</h3>
+    <div class="memo">
+      <div class="h">Bottom line</div>
+      <p>The owner's duplex gut described is realistic for this property. Based on the walkthrough, expect $360K–$400K over 7–9 months. Relocating the stair adds roughly $40K plus a DOB Alt-1 (Alteration-CO) filing and 2–3 months.</p>
+      <div class="h">Questions to settle before you bid</div>
+      <ul><li>Do you want the stair moved, or is the parlor opened up enough by removing the non-bearing partitions?</li><li>Will the garden level stay a separate rental unit? It changes the kitchen location, the gas work and the Certificate of Occupancy.</li></ul>
+      <div class="h">What we saw</div>
+      <table><tbody>
+        <tr><td>Walls &amp; finishes</td><td>Plaster failed on the parlor east wall; full skim or new board. Original pocket doors salvageable.</td></tr>
+        <tr><td>Kitchen</td><td>Kitchen relocation requires a new gas line and a relocated waste stack.</td></tr>
+        <tr><td>Bathrooms</td><td>All bathrooms new. Wet-over-dry alignment works with the existing stack.</td></tr>
+        <tr><td>Electrical</td><td>Mixed BX and cloth wiring; 100A panel. Full rewire and 200A service upgrade required; Con Ed coordination adds lead time.</td></tr>
+        <tr><td>Envelope</td><td>Roof approximately 5–7 years old, no action. Rear facade shows spalling; budget for patching, not full recasting.</td></tr>
+      </tbody></table>
+      <div class="h">Budget bands</div>
+      <table><tbody>
+        <tr><td>Owner's duplex gut, stair stays</td><td class="mono">$360K – $400K</td></tr>
+        <tr><td>Stair relocation (add)</td><td class="mono">+ $38K – $45K, plus Alt-1</td></tr>
+        <tr><td>Rear facade repair (add)</td><td class="mono">+ $12K – $20K</td></tr>
+        <tr><td>Contingency we recommend</td><td class="mono">10%</td></tr>
+      </tbody></table>
+      <div class="h">Approvals &amp; timeline</div>
+      <p>DOB Alt-2 (Alteration) filing for MEP and layout; Alt-1 (Alteration-CO) only if the stair moves. ACP-5 asbestos survey required for pre-1987 buildings. Typical sequence: 4–6 weeks design and filing, 7–9 months construction.</p>
+    </div>
+  </div>
+  <div class="ask">
+    <h3>If they ask</h3>
+    <div class="qa"><b>"Can I just record audio?"</b>Today: record on the phone and use the keyboard's dictation to paste text. Audio-file transcription is the first roadmap item once the pilot starts.</div>
+    <div class="qa"><b>"What about photos?"</b>Labels go in now so the memo can reference them. Attaching the images to the outgoing email comes with the Gmail connection.</div>
+  </div>
+</section>
+
+<!-- ===================== 07 ===================== -->
+<section class="screen" id="s7">
+  <div class="head">
+    <div><div class="kicker">Screen 07 · rail: Inbox agent</div><h2>Mail that files itself</h2><p>Headline: "Your inbox, filed and acted on." Five new messages sit in the list. One button does the work.</p></div>
+    <div class="time"><b>3 min</b> · 17:00–20:00</div>
+  </div>
+  <div class="cols">
+    <div class="do">
+      <h3>Do</h3>
+      <ol>
+        <li><span>Click <span class="ui">Inbox agent</span>. Read the five senders and subjects aloud. Meta line reads <b>5 new · 0 filed · 0 need review</b>.</span></li>
+        <li><span>Point at the pill <b>Gmail not connected</b>. Say these came in by paste; in production it polls the Egnatia inbox.</span></li>
+        <li><span>Press <span class="ui">Process new</span>. Toast: "5 messages filed." Each message now shows a list of actions instead of its body.</span></li>
+        <li><span>Read <b>Grace</b>'s actions, then <b>Ryo</b>'s, then <b>Chidi</b>'s. Point at the DOB notice and the tile invoice: filed to their projects, no reply.</span></li>
+        <li><span>Click <span class="ui">Follow-ups</span>. Badge reads 8. Scroll down: two new <b>reply</b> cards sit just above Jonathan's won-touch card near the bottom, subjects Re: Pre-purchase walkthrough — 229 Carroll St and Re: Board package question for 9C. Read Ryo's reply draft.</span></li>
+      </ol>
+    </div>
+    <div class="say">
+      <h3>Say</h3>
+      <p>"Five emails from this morning. An agent confirming a walkthrough, a buyer's board asking for a scope letter, a thank-you from Chidi with a question buried in it, a DOB status notice, and a tile invoice. Today each of those is a decision Elona makes at eleven at night."</p>
+      <p>"One button. Every message is filed to the right agent, buyer, or property. The dates and decisions come out and land on the record: Lena wants to keep the garden unit as a rental, the board meets on the 28th, Chidi bids Friday. The DOB notice and the invoice are tagged to their jobs and nobody has to read them. And where a reply is needed, it's drafted and sitting in the queue for approval, in her voice."</p>
+      <p>"Look at Ryo's reply. He asked for a scope letter for the co-op board. The draft says yes, names the format managing agents want, and commits to Thursday so it's in before the 28th. That's the note Elona would write. She just didn't have to."</p>
+      <p class="beat">Four things it never does: send without approval, quote a price she hasn't set, delete or move originals, touch any inbox but Egnatia's. They're printed on the screen.</p>
+    </div>
+  </div>
+  <div class="onscreen">
+    <h3>On screen · after Process new</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Message</th><th>Actions shown</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Grace Lindqvist · Re: Pre-purchase walkthrough — 229 Carroll St</td><td>Filed to 229 Carroll St · Extracted: Buyer wants to keep the garden unit as a rental · Date mentioned: Tuesday at 10am · Reply drafted for your approval</td><td><span class="tag good">filed</span></td></tr>
+        <tr><td>Chidi Adeyemi · Thanks for walking Prospect Pl</td><td>Filed to 57 Prospect Pl · Extracted: Buyer bidding by Friday · Date mentioned: by Friday</td><td><span class="tag good">filed</span></td></tr>
+        <tr><td>Ryo Nakamura · Board package question for 9C</td><td>Filed to 155 W 86th St #9C · Extracted: Board wants a scope letter and preliminary schedule · Date mentioned: the 28th · Reply drafted for your approval</td><td><span class="tag good">filed</span></td></tr>
+        <tr><td>DOB NOW · Job filing status: 18 Sidney Pl</td><td>Filed to 18 Sidney Pl</td><td><span class="tag good">filed</span></td></tr>
+        <tr><td>Bay Ridge Tile Supply · Invoice #4471 — 340 W 23rd</td><td>Filed to 340 W 23rd St #6A</td><td><span class="tag good">filed</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="ask">
+    <h3>If they ask</h3>
+    <div class="qa"><b>"Does it read all my email?"</b>Only the connected Egnatia address, only to classify and file. It never deletes or moves anything in Gmail. Sending uses the same account and every send is approved by hand.</div>
+    <div class="qa"><b>"What if it files something wrong?"</b>Anything it can't match with confidence is marked "needs review" instead of filed. And every filed message is visible on the agent's or property's timeline, so a mistake is one click to spot.</div>
+  </div>
+</section>
+
+<!-- ===================== 08 ===================== -->
+<section class="screen" id="s8">
+  <div class="head">
+    <div><div class="kicker">Screen 08 · rail: Settings</div><h2>The rules are Elona's</h2><p>Four panels: Connections, Cadence &amp; clocks, Score weights, Voice &amp; identity. One Save button at the bottom.</p></div>
+    <div class="time"><b>2 min</b> · 20:00–22:00</div>
+  </div>
+  <div class="cols">
+    <div class="do">
+      <h3>Do</h3>
+      <ol>
+        <li><span>Click <span class="ui">Settings</span>. Point at <b>Connections</b>: AI drafting is mock, Gmail not configured. Say what each takes to turn on.</span></li>
+        <li><span>Point at <b>Cadence &amp; clocks</b>. Read the five numbers.</span></li>
+        <li><span>Scroll to <b>Voice profile</b>. Read the first two sentences aloud. This is why the drafts sound like her.</span></li>
+        <li><span>Optional live change: set <b>Core agents</b> from 14 to <b>7</b>, press <span class="ui">Save settings</span>, go to <span class="ui">Agents → Opportunities</span>, press <span class="ui">Run the rules now</span>. Priya (9 days) gains an "agent cold" card. Set it back to 14 afterwards.</span></li>
+      </ol>
+    </div>
+    <div class="say">
+      <h3>Say</h3>
+      <p>"Everything the AI did in the last twenty minutes started from this page. Core agents every 14 days, growth and new every 30, dormant every 90. Estimate check-in at day seven. Memo due 24 hours after a walkthrough. Stalled after ten days in a stage. Minimum project $150K. Change any number and the rules change tonight."</p>
+      <p>"The voice profile is the part I'd ask Elona to spend ten minutes on. Short, direct, warm. No 'hope this finds you well.' Lead with the property, offer something useful, one easy ask. Signature phrases: 'reduce uncertainty', 'before they inherit the renovation', 'no cost, no pressure'. Every draft you saw was written against that paragraph."</p>
+      <p>"Two connections turn this from demo to production: an Anthropic key, which is a few dollars a month at Egnatia's volume, and a Google sign-in from info@egnatiaconstruction.com."</p>
+    </div>
+  </div>
+  <div class="onscreen">
+    <h3>On screen · Cadence &amp; clocks and Score weights</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Setting</th><th class="num">Value</th><th>Setting</th><th class="num">Weight</th></tr></thead>
+      <tbody>
+        <tr><td>Core agents: touch every</td><td class="num mono">14 days</td><td>Scope &amp; property type</td><td class="num mono">30</td></tr>
+        <tr><td>Growth agents</td><td class="num mono">30 days</td><td>Agent referral history</td><td class="num mono">25</td></tr>
+        <tr><td>New agents</td><td class="num mono">30 days</td><td>Buyer signals</td><td class="num mono">20</td></tr>
+        <tr><td>Dormant agents</td><td class="num mono">90 days</td><td>Stage &amp; timing</td><td class="num mono">15</td></tr>
+        <tr><td>Estimate check-in</td><td class="num mono">7 days</td><td>Building constraints</td><td class="num mono">10</td></tr>
+        <tr><td>Memo due after walkthrough</td><td class="num mono">24 hours</td><td>Nightly run</td><td class="num mono">6:00 ET</td></tr>
+        <tr><td>Stalled after</td><td class="num mono">10 days</td><td>Minimum project value</td><td class="num mono">$150,000</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ===================== 09 ===================== -->
+<section class="screen close" id="close">
+  <div class="head">
+    <div><div class="kicker">Screen 09 · rail: Today, again</div><h2>Close the loop</h2><p>Go back to where Elona starts her week and show what changed in twenty minutes.</p></div>
+    <div class="time"><b>1 min</b> · 22:00–23:00</div>
+  </div>
+  <div class="cols">
+    <div>
+      <div class="do">
+        <h3>Do</h3>
+        <ol>
+          <li><span>Click <span class="ui">Today</span>. <b>Hours saved · 7 days</b> now reads about <b>2.8</b>: one approval, one memo, five emails filed.</span></li>
+          <li><span>Point at <b>Handled without you</b>: the five processed emails with their first action.</span></li>
+          <li><span>Point at <b>Agents on cadence</b>: 6 of 8, 1 gone cold.</span></li>
+          <li><span>Stop sharing. Ask what they'd change first.</span></li>
+        </ol>
+      </div>
+      <div class="say" style="margin-top:20px">
+        <h3>Say</h3>
+        <p>"Same screen as the start. In twenty minutes: a cold agent is warm, a memo the buyer needed before Friday is out, five emails are filed and two replies are waiting for a yes. Nearly three hours of Elona's week, and she made every decision. The system did the carrying."</p>
+        <p>"The pilot is this, on Egnatia's real agents and real inbox, for one quarter. The number we're watching is one in five."</p>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);font-family:'IBM Plex Sans',sans-serif;font-weight:500">To go live, in order</h3>
+      <ul>
+        <li>Private GitHub repo, deploy the Dockerfile to Railway or Render with a persistent volume at <span class="mono">/data</span>.</li>
+        <li>Set APP_URL, a real APP_PASSWORD, and AUTO_SEED=false so it starts empty.</li>
+        <li>Add ANTHROPIC_API_KEY. Every draft, memo, and filing switches to Claude.</li>
+        <li>Google Cloud OAuth client, Gmail and Calendar APIs enabled, then Settings → Connect Gmail as info@egnatiaconstruction.com.</li>
+        <li>Enter the real agents with tiers. First nightly run at 6:00 the next morning.</li>
+      </ul>
+      <h3 style="font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);font-family:'IBM Plex Sans',sans-serif;font-weight:500;margin-top:22px">Roadmap, if they ask what's next</h3>
+      <ul>
+        <li>Texts via Twilio for agents like Daniel who don't do email.</li>
+        <li>Audio upload and transcription for walkthrough voice notes.</li>
+        <li>Calendar events for walkthroughs; DOB NOW status lookups by BIN.</li>
+        <li>Postgres and per-client instances when there's more than one contractor on the platform.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+</div>

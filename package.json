@@ -1,0 +1,23 @@
+{
+  "name": "egnatia-relay",
+  "version": "0.1.0",
+  "description": "Agent relationships → follow-up → walkthrough memos → qualified opportunities. Built by Keres AI for Egnatia Construction.",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node scripts/seed.js",
+    "rules": "node scripts/run-rules.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "better-sqlite3": "^11.7.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
+    "node-cron": "^3.0.3"
+  },
+  "engines": { "node": ">=20" }
+}
