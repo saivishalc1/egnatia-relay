@@ -26,6 +26,40 @@ npm start                   # http://localhost:3000  — auto-seeds sample data 
 
 Sample data is illustrative, not Egnatia's records. To start clean for the real instance: set `AUTO_SEED=false` in `.env` and delete `data/relay.db`.
 
+## Demo it (about 20 minutes)
+
+The sample data is built so a live demo tells one story. Eight agents across three tiers, ten opportunities from "walkthrough requested" to "won", five unread emails, and nine follow-ups the rules generated on first boot. None of it is Egnatia's real records.
+
+**The thread to pull:** 57 Prospect Pl, a brownstone Marisol Vega brought. It was walked yesterday with the buyer, the 24-hour memo clock has run out, and the buyer has emailed asking about "the stair question" before he bids Friday. By the end of the demo the memo is written and sent, the overdue item has cleared itself, and his email has filed itself to the property.
+
+| Screen (left rail) | Show | Say |
+|---|---|---|
+| **Agents → Opportunities** | The chain 10 → 7 → 4 → 3 → 2 and the "What happens next" column | One in five referrals becomes a project. The system already knows the next action for every agent. |
+| **Today** | The written brief, the priority list, Hours saved at 0 | Five-second Monday read. Priority is likelihood × value, not recency. |
+| **Follow-ups** | Victor Hsu's card: the "Why now" line, the draft, Approve | Six rules ran. The draft knows his notes. Nothing sends without approval. |
+| **Agents** | Victor is now On cadence; Priya's drawer and notes | Tier is the only decision; the cadence follows. |
+| **Pipeline** | 412 3rd St at 83 and its reasons; 145 Nassau St at 32 | Five weighted factors, every score explains itself. |
+| **Walkthrough memo** | Paste the notes below for 57 Prospect Pl, Generate, Approve | Dictation to a client-ready memo. Only numbers from the notes. The overdue item disappears. |
+| **Inbox agent** | Process new: five messages filed, two replies drafted | Files, extracts dates and decisions, drafts replies for approval. |
+| **Settings** | Cadence, weights, the voice profile | Everything the AI did started from this page. |
+| **Today** again | Hours saved is now about 2.8 | Same screen as the start; the system did the carrying. |
+
+Notes to paste on the memo screen (they exercise every section of the memo):
+
+```
+Parlor floor: plaster shot on the east wall, pocket doors salvageable. Kitchen moves to the garden level, new gas line and waste stack. Three new baths, stack works. Panel is 100 amp with mixed BX and cloth, needs a full rewire and 200 amp service. Roof about 5 years old. Rear facade has some spalling. Ballpark 360 to 400 keeping the stair. Moving the stair is another 40 plus an Alt-1.
+```
+
+Two things to know in mock mode: **Redraft** returns the same template (with `ANTHROPIC_API_KEY` set it rewrites to your instruction), and approvals **log as sent** rather than emailing until Gmail is connected.
+
+The sample dates age one day per day. To put the data back exactly as described, reset and reload the browser:
+
+```bash
+npm run seed -- --reset
+```
+
+The full talk track, with every on-screen number, what to click, and answers to likely questions, is in [`docs/demo-run-of-show.html`](docs/demo-run-of-show.html). Open it in a browser on a second screen.
+
 ## Deploy (Railway / Render / Fly / any Docker host)
 
 1. Push this folder to a private GitHub repo.
@@ -48,6 +82,7 @@ src/gmail.js      OAuth, inbox polling, sending
 src/routes.js     REST API (/api/*) and Google auth (/auth/*)
 public/           Single-page UI
 scripts/seed.js   Sample data
+docs/             Demo run of show (talk track for a live walkthrough)
 ```
 
 ## API sketch
